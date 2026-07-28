@@ -33,10 +33,8 @@
 
 ## 🛠️ Tools Used
 
-- **[Tool 1]** — [What it does]
-- **[Tool 2]** — [What it does]
-- **[Tool 3]** — [What it does]
-- **[Tool 4]** — [What it does]
+- **Nmap** — Used for service version detection (`-sV`) and OS fingerprinting (`-O`)
+- **NVD (National Vulnerability Database)** — Referenced to research CVE details, CVSS scores, and attack vectors for identified software versions
 
 ---
 
@@ -72,8 +70,6 @@ Command identified the software version of the 5 ports that I specified by port 
 <img width="315" height="176" alt="Screenshot 2026-07-17 233417" src="https://github.com/user-attachments/assets/86953e97-7725-4076-a5b7-963984021e45" />
 
 
-.
-
 Finding: [What did you discover?] I discovered that the -sV command displays the the software version of the service running on the ports that i specified.
 version detection bridges from "port is open" to "specific CVE exists".
 
@@ -98,62 +94,79 @@ Finding:
 -O is a flag used to attempt to identify the operating system of the target host.
 I ran Nmap OS detection (-O) against Metasploitable. However, rather than returning a confident OS guess, Nmap reported "No exact OS matches for host" and instead output raw TCP/IP fingerprint data. I found that this happens when the target's network stack behavior doesn't closely match a known signature in Nmap's OS database. This is still a useful result because it shows OS fingerprinting isn't always reliable and that an analyst may need to combine it with other evidence (like port/service data) to determine the target OS with confidence.
 
-3. [Reseach and Document the service version, CVE number, CVSS score, and attack vector for one of the service versions found.]
-   
-[Brief description of what you did and why]
+
+### 3. [Research and Document the service version, CVE number, CVSS score, and attack vector for one of the service versions found.]
+
+In this section, I used data I gathered from previous service scans to research real CVE information (CVE number, CVSS score, and attack vectors) on the NVD (National Vulnerability Database) website: nvd.nist.gov for the service version found for port 21 (FTP).
 
 # Command used
-[your command here]
-Finding: [What did you discover?]
+[Searched NVD for: vsftpd 2.3.4]
+
+# Output
+After searching the NVD database, I found that vsftpd 2.3.4 corresponds to CVE-2011-2523, with a CVSS score of 9.8 (Critical) and an attack vector of `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`. This indicates the vulnerability is exploitable remotely over the network with low complexity and no privileges required, resulting in a complete compromise of confidentiality, integrity, and availability.
+
+**Finding:** The vsftpd 2.3.4 service running on port 21 (FTP) is affected by CVE-2011-2523, a critical vulnerability (CVSS 9.8) exploitable remotely over the network with low complexity and no privileges required — resulting in complete compromise of confidentiality, integrity, and availability. This CVE corresponds to a known backdoor intentionally planted in this version of vsftpd, historically allowing attackers to gain unauthorized root access to the system.
+
 
 📊 Key Findings Summary
-Port/Service	Tool Used	Risk Level	Notes
-[e.g. 21/tcp FTP]	[e.g. Nmap]	🔴 Critical	[Notes]
-[e.g. 23/tcp Telnet]	[e.g. Wireshark]	🔴 Critical	[Notes]
-[e.g. 80/tcp HTTP]	[e.g. Nikto]	🟠 High	[Notes]
-[e.g. 3306/tcp MySQL]	[e.g. OpenVAS]	🟠 High	[Notes]
-[e.g. 22/tcp SSH]	[e.g. Nmap]	🟡 Medium	[Notes]
-Risk Levels: 🔴 Critical | 🟠 High | 🟡 Medium | 🟢 Low
+
+| Port/Service | Tool Used | Risk Level | Notes |
+|---|---|---|---|
+| 21/tcp FTP | Nmap (`-sV`) + NVD | 🔴 Critical | vsftpd 2.3.4 — CVE-2011-2523, CVSS 9.8, known backdoor vulnerability |
+| 23/tcp Telnet | Nmap (`-sV`) | 🔴 Critical | Linux telnetd — transmits data in plaintext |
+| 80/tcp HTTP | Nmap (`-sV`) | 🟠 High | Apache httpd 2.2.8 (Ubuntu) — outdated, multiple known CVEs |
+| 22/tcp SSH | Nmap (`-sV`) | 🟡 Medium | OpenSSH 4.7p1 Debian 8ubuntu1 — outdated version |
+| 3306/tcp MySQL | Nmap (`-sV`) | 🟠 High | MySQL 5.0.51a-3ubuntu5 — outdated, exposed on network |
+
+**Risk Levels:** 🔴 Critical | 🟠 High | 🟡 Medium | 🟢 Low
 
 🗺️ MITRE ATT&CK Mapping
-Action Performed	ATT&CK Tactic	Technique ID	Technique Name
-[e.g. Port scanning]	[e.g. Reconnaissance]	[e.g. T1595]	[e.g. Active Scanning]
-[Action]	[Tactic]	[ID]	[Technique]
-[Action]	[Tactic]	[ID]	[Technique]
-[Action]	[Tactic]	[ID]	[Technique]
-🛡️ Defensive Recommendations
-Based on findings, the following remediations would be recommended in a real environment:
 
-[Finding 1] — [Recommendation]
-[Finding 2] — [Recommendation]
-[Finding 3] — [Recommendation]
-[Finding 4] — [Recommendation]
-[Finding 5] — [Recommendation]
-📚 CySA+ Exam Relevance
-This lab directly maps to the following CompTIA CySA+ (CS0-003) exam domains:
+| Action Performed | ATT&CK Tactic | Technique ID | Technique Name |
+|---|---|---|---|
+| Service version detection (`-sV`) | Reconnaissance | T1592 | Gather Victim Host Information |
+| OS fingerprinting (`-O`) | Reconnaissance | T1592.004 | Gather Victim Host Information: Client Configurations |
+| CVE/CVSS research via NVD | Reconnaissance | T1588.006 | Obtain Capabilities: Vulnerabilities |
 
-Domain	Coverage
-Security Operations (33%)	[What this lab covers in this domain]
-Vulnerability Management (30%)	[What this lab covers in this domain]
-Incident Response (20%)	[What this lab covers in this domain]
-Reporting & Communication (17%)	[What this lab covers in this domain]
+Defensive Recommendations
+
+1. **vsftpd 2.3.4 backdoor (Critical)** — Upgrade immediately; this version contains a known, publicly documented backdoor and should never be used in any environment.
+2. **Telnet in use (Critical)** — Disable Telnet and replace with SSH for all remote administration.
+3. **Outdated Apache/PHP versions (High)** — Upgrade to current supported releases to eliminate known CVEs tied to this version.
+4. **Outdated MySQL exposed on the network (High)** — Upgrade the database version and restrict access to localhost or an internal-only network segment.
+5. **Outdated OpenSSH (Medium)** — Upgrade to a current release to benefit from security patches issued since 2007.
+
+
 🔑 Technical Notes
-[Any important notes about your lab setup, workarounds, or lessons learned. Example:
+
 
 "Always add the -n flag to Nmap scans in this VMware environment to prevent DNS resolution hangs."]
 
 -sP and -sT contradict eachother (Can't be used together because -sP means just do a ping/host-discovery sweep, skip ports entirely but -sT tells Nmap to do a full TCP connect port scan. These commands contradict eachother.)
 
 # Any important commands or workarounds
-[command here]
+
+# Identify software versions on specific open ports
+sudo nmap -sV -Pn --disable-arp-ping -n -p 21,22,23,80,3306 192.168.79.130
+
+# Attempt OS fingerprinting
+sudo nmap -O -Pn --disable-arp-ping -n 192.168.79.130
+
+# Workaround: OS detection may return "No exact OS matches for host" instead of a confident guess. When this happens, check the raw TCP/IP fingerprint output (e.g. platform string like x86_64-pc-linux-gnu) and cross-reference with service banners (e.g. "Linux telnetd", Samba version strings) to confirm the OS through other evidence.
+
+
+
 📌 About This Project
-[1-2 sentences about how this fits into your overall portfolio and career goals.]
+[This repository is part of my broader cybersecurity portfolio, connecting service version detection directly to real-world vulnerability research — demonstrating the full process of identifying outdated software and researching its documented risks via the NVD, a process later validated with live exploitation in my Nmap Scripting Engine repository.]
 
 Related repositories:
 
-[Repo Name] — [Brief description]
-[Repo Name] — [Brief description]
-[Repo Name] — Coming soon
+- `Nmap-Host-Discovery-and-Lab-Baseline` — Established a baseline of the lab network using ping sweeps and host discovery
+- `Nmap-Scan-Types-SYN-vs-TCP-vs-UDP` — Compared SYN, TCP connect, and UDP scan types against the target
+- `Nmap-Scripting-Engine` — Used the vsftpd CVE identified in this repository to demonstrate live exploitation and confirmed root access
+- `Wireshark-Capture-and-Analyze-Traffic` — Captured and analyzed live packet traffic, including plaintext data exposure
+- `TCPDump-CLI-Packet-Capture` — Captured traffic from the command line, including a live Telnet session showing plaintext credential exposure
+
 👤 Author
 Dashane James
 Senior Field Service Technician → Cybersecurity Analyst
