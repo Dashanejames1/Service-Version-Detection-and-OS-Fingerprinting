@@ -1,26 +1,22 @@
-..
-
-
-
-# 🔍 [# Service-Version-Detection-and-OS-Fingerprinting]
+# 🔍 Service-Version-Detection-and-OS-Fingerprinting
 
 **Author:** Dashane James  
-**Lab Environment:** [e.g. VMware Workstation | Kali Linux | Metasploitable 2]  
-**Purpose:** [Identify exact software versions on metasploitable and find real CVE's for them.]  .
+**Lab Environment:** VMware Workstation | Kali Linux | Metasploitable 2 
+**Purpose:** Identify exact software versions on metasploitable and find real CVE's for them.  .
 **Status:** 🟢 Active / 🟡 In Progress / 🔵 Completed
 
----.
-.2.
+---
+
 ## 📋 Overview
 
-[Write 2-3 sentences describing what this project is, what you did, and why. Example: "This repository documents a series of ______ assessments performed in an isolated VMware home lab. The goal was to build hands-on proficiency with ______ aligned with CySA+ exam objectives."] 
+
 
 .
 ---
 
 ## 🧪 Lab Environment
 | Component | Details |
-|---|---|.2
+|---|---|
 | Hypervisor | VMware Workstation (Host-Only Network) |
 | Attacker Machine | Kali Linux 2026.1 — `192.168.79.129` |
 | Target Machine | [Target name] — `192.168.79.130` |
@@ -38,48 +34,40 @@
 
 ---
 
-## 📁 Repository Structure
 
-```
-[Repo-Name]/
-├── README.md
-├── [folder-1]/
-│   ├── [file1.txt]        # Description of file
-│   └── [file2.md]         # Description of file
-├── [folder-2]/
-│   ├── [file3.md]         # Description of file
-│   └── [file4.txt]        # Description of file
-└── reports/
-    └── [final-report.md]  # Full assessment report
-```
+
 
 ---
 
 ## 🔬 Tasks / Assessments Performed
 
-###1. [Run version detection on the top open ports to gather more information about the target.]
+###1. Run version detection on the top open ports to gather more information about the target.
 
-[I ran Nmap version detection (-sV) against the top open ports I previously identified (21, 22, 23, 80, 3306) to gather more detailed information about the target. Version detection identifies the specific software and version running on each open port, rather than just the generic service name. This is valuable because knowing the exact version allows me to research known, documented vulnerabilities (CVEs) tied to that specific software release.]
+I ran Nmap version detection (-sV) against the top open ports I previously identified (21, 22, 23, 80, 3306) to gather more detailed information about the target. Version detection identifies the specific software and version running on each open port, rather than just the generic service name. This is valuable because knowing the exact version allows me to research known, documented vulnerabilities (CVEs) tied to that specific software release.
 
 # Command used
-[sudo nmap -sV -Pn --disable-arp-ping -n -p 21,22,23,80,3306 192.168.79.130]
+
+sudo nmap -sV -Pn --disable-arp-ping -n -p 21,22,23,80,3306 192.168.79.130
 
 Output
+
 Command identified the software version of the 5 ports that I specified by port number. FTP port 21 is running software version vsftpd 2.3.4, SSH port 22 is running version OpenSSH 4.7p1 debian 8unbuntu1 (protocol 2.0), Telnet port 23 is running version Linux Telnetd, TCP port 80 is running Apache httpd 2.2.8 ((Ubuntu) Dav/2), and mysql port 3306 is running Mysql 5.0.51a-3ubuntu5.
 
 <img width="315" height="176" alt="Screenshot 2026-07-17 233417" src="https://github.com/user-attachments/assets/86953e97-7725-4076-a5b7-963984021e45" />
 
 
-Finding: [What did you discover?] I discovered that the -sV command displays the the software version of the service running on the ports that i specified.
+Findings:
+
+I discovered that the -sV command displays the the software version of the service running on the ports that i specified.
 version detection bridges from "port is open" to "specific CVE exists".
 
-2. [Run OS detection (-O) and note nmap's guess]
+2. Run OS detection (-O) and note nmap's guess
    
 I ran Nmap OS detection (-O) against Metasploitable to attempt to identify the target's operating system and kernel. While the previous task identified the specific software running on each service, OS detection provides a different layer of information, the underlying operating system itself, which can reveal OS-level vulnerabilities separate from application-level ones. This information is valuable for identifying OS-specific CVEs, understanding patch levels, and building a more complete picture of the target for further research.
 
 
 # Command used
-[suso nmap -O -Pn --disable-arp-ping -n 192.168.79.130]
+sudo nmap -O -Pn --disable-arp-ping -n 192.168.79.130
 
 Output
 After running Nmap OS detection (-O) against Metasploitable. The result was different then expected. Rather than returning a confident OS guess, Nmap reported "No exact OS matches for host" and instead output raw TCP/IP fingerprint data.
@@ -91,21 +79,26 @@ After running Nmap OS detection (-O) against Metasploitable. The result was diff
 
 
 Finding: 
+
 -O is a flag used to attempt to identify the operating system of the target host.
 I ran Nmap OS detection (-O) against Metasploitable. However, rather than returning a confident OS guess, Nmap reported "No exact OS matches for host" and instead output raw TCP/IP fingerprint data. I found that this happens when the target's network stack behavior doesn't closely match a known signature in Nmap's OS database. This is still a useful result because it shows OS fingerprinting isn't always reliable and that an analyst may need to combine it with other evidence (like port/service data) to determine the target OS with confidence.
 
 
-### 3. [Research and Document the service version, CVE number, CVSS score, and attack vector for one of the service versions found.]
+### 3. Research and Document the service version, CVE number, CVSS score, and attack vector for one of the service versions found.
 
 In this section, I used data I gathered from previous service scans to research real CVE information (CVE number, CVSS score, and attack vectors) on the NVD (National Vulnerability Database) website: nvd.nist.gov for the service version found for port 21 (FTP).
 
 # Command used
-[Searched NVD for: vsftpd 2.3.4]
+
+Searched NVD for: vsftpd 2.3.4
 
 # Output
+
 After searching the NVD database, I found that vsftpd 2.3.4 corresponds to CVE-2011-2523, with a CVSS score of 9.8 (Critical) and an attack vector of `CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H`. This indicates the vulnerability is exploitable remotely over the network with low complexity and no privileges required, resulting in a complete compromise of confidentiality, integrity, and availability.
 
-**Finding:** The vsftpd 2.3.4 service running on port 21 (FTP) is affected by CVE-2011-2523, a critical vulnerability (CVSS 9.8) exploitable remotely over the network with low complexity and no privileges required — resulting in complete compromise of confidentiality, integrity, and availability. This CVE corresponds to a known backdoor intentionally planted in this version of vsftpd, historically allowing attackers to gain unauthorized root access to the system.
+**Findings:** 
+
+The vsftpd 2.3.4 service running on port 21 (FTP) is affected by CVE-2011-2523, a critical vulnerability (CVSS 9.8) exploitable remotely over the network with low complexity and no privileges required — resulting in complete compromise of confidentiality, integrity, and availability. This CVE corresponds to a known backdoor intentionally planted in this version of vsftpd, historically allowing attackers to gain unauthorized root access to the system.
 
 
 📊 Key Findings Summary
@@ -157,7 +150,7 @@ sudo nmap -O -Pn --disable-arp-ping -n 192.168.79.130
 
 
 📌 About This Project
-[This repository is part of my broader cybersecurity portfolio, connecting service version detection directly to real-world vulnerability research — demonstrating the full process of identifying outdated software and researching its documented risks via the NVD, a process later validated with live exploitation in my Nmap Scripting Engine repository.]
+This repository is part of my broader cybersecurity portfolio, connecting service version detection directly to real-world vulnerability research — demonstrating the full process of identifying outdated software and researching its documented risks via the NVD, a process later validated with live exploitation in my Nmap Scripting Engine repository.
 
 Related repositories:
 
